@@ -1,0 +1,30 @@
+{
+  "include": [".react-router/types/**/*", "src/**/*", "server/**/*"],
+  "compilerOptions": {
+    "paths": {
+      "$tools": ["./src/tools"],
+      "$tools/*": ["./src/tools/*"],
+      "$lib/*": ["./src/lib/*"],
+      "$framework/*": ["./src/framework/*"],
+      "$framework": ["./src/framework"],
+      "~/*": ["./src/ui/*"]
+    },
+    "allowJs": true,
+    "baseUrl": ".",
+    "checkJs": true,
+    "composite": true,
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "rootDirs": [".", "./.react-router/types"],
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": ["vite/client", "node"],
+    "verbatimModuleSyntax": true
+  }
+}
