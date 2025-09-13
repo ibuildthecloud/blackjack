@@ -1,22 +1,32 @@
 import { z } from "zod";
 import { DefineTool } from "$framework";
-import pkg from "engine-blackjack";
-const { Game, presets } = pkg;
-type GameType = InstanceType<typeof Game>;
-import { saveGameState } from "$lib/db";
-import { gameUI } from "./resource";
-
-// Keep a small in-memory cache for frequently accessed games
-const gameCache = new Map<string, GameType>();
+import { gameUI } from "./ui";
+import { Game } from "$lib/game";
 
 export default DefineTool({
   name: "blackjack-new-game",
-  description: "Create a new blackjack game with customizable rules",
+  description: "Create a new blackjack game",
   inputSchema: {
-    gameId: z
-      .string()
-      .describe("Unique identifier for the game session")
-      .optional(),
+    bet: z
+      .number()
+      .min(1)
+      .default(10)
+      .describe("The amount to bet for this hand"),
+    sideBets: z
+      .object({
+        luckyLucky: z
+          .number()
+          .min(0)
+          .default(0)
+          .describe("Lucky Lucky side bet amount"),
+        perfectPairs: z
+          .number()
+          .min(0)
+          .default(0)
+          .describe("Perfect Pairs side bet amount"),
+      })
+      .optional()
+      .describe("Optional side bets"),
     rules: z
       .object({
         decks: z
@@ -48,69 +58,25 @@ export default DefineTool({
       .optional()
       .describe("Game rules configuration"),
   },
-  execute: async ({ gameId, rules }) => {
-    // Generate gameId if not provided
-    const id =
-      gameId || `game_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  execute: async ({ bet, sideBets, rules }, ctx) => {
+    let money = 200;
 
-    // Create game rules
-    const gameRules = rules ? presets.getRules(rules) : presets.getRules({});
+    const id = Game.getGameIdFromSession(ctx);
+    const existingGame = await Game.load(id);
 
-    // Create new game instance
-    const game = new Game(undefined, gameRules);
+    if (existingGame) {
+      if (existingGame.state?.stage !== "done") {
+        throw new Error("Must finish current game");
+      }
+      money = existingGame.money;
+    }
 
-    // Save to database and cache
-    await saveGameState(id, game);
-    gameCache.set(id, game);
-
-    // Get initial state
-    const state = game.getState();
+    const game = new Game(id, money);
+    await game.deal(bet, sideBets, rules);
 
     return {
-      text: `New blackjack game created with ID: ${id}`,
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              gameId: id,
-              stage: state.stage,
-              rules: state.rules,
-              message:
-                "Game ready to start. Use blackjack-deal to begin playing.",
-            },
-            null,
-            2,
-          ),
-        },
-        gameUI(id),
-      ],
+      text: game.toString(),
+      ui: gameUI(id),
     };
   },
 });
-
-// Export the games cache and utility functions for other tools
-export { gameCache };
-
-export async function getGame(gameId: string): Promise<GameType | null> {
-  // Check cache first
-  if (gameCache.has(gameId)) {
-    return gameCache.get(gameId)!;
-  }
-
-  // Load from database
-  const { loadGameState } = await import("$lib/db");
-  const game = await loadGameState(gameId);
-  
-  if (game) {
-    gameCache.set(gameId, game);
-  }
-  
-  return game;
-}
-
-export async function updateGame(gameId: string, game: GameType): Promise<void> {
-  const { saveGameState } = await import("$lib/db");
-  await saveGameState(gameId, game);
-  gameCache.set(gameId, game);
-}

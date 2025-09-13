@@ -1,5 +1,6 @@
 {
   "include": [".react-router/types/**/*", "src/**/*", "server/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"],
   "compilerOptions": {
     "paths": {
       "$tools": ["./src/tools"],

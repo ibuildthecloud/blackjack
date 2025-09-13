@@ -4,10 +4,10 @@ import express, {
   type Response,
 } from "express";
 import { randomUUID } from "node:crypto";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import header from "$lib/header";
+import header from "$framework/header";
 import { validUUID } from "$lib/uuid";
 
 export function Middleware(
@@ -38,7 +38,7 @@ class McpServerMiddleware {
   private setup = () => {
     this.app.use(express.json());
     this.app.post("/", this.post);
-    this.app.get("/", this.getDelete);
+    this.app.get("/", this.post);
     this.app.delete("/", this.getDelete);
   };
 
@@ -106,7 +106,11 @@ class McpServerMiddleware {
     const transport = sessionId && this.transports[sessionId];
 
     if (!transport) {
-      res.status(400).send("Invalid or missing session ID");
+      res
+        .status(400)
+        .send(
+          `Invalid or missing session ID: ${sessionId ? sessionId.slice(0, 8) : "none"}`,
+        );
       return;
     }
     await transport.handleRequest(req, res);

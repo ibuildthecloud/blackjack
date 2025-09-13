@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@mcp-ui/server": "^5.10.0",
-    "@modelcontextprotocol/sdk": "^1.17.5",
+    "@modelcontextprotocol/sdk": "^1.18.0",
     "@react-router/express": "^7.7.1",
     "@react-router/node": "^7.8.2",
     "compression": "^1.7.5",

@@ -59,7 +59,7 @@ declare module "engine-blackjack" {
   }
 
   interface Hand {
-    bet?: number
+    bet?: number;
     cards: Card[];
     playerValue: HandValue;
     playerHasBlackjack: boolean;
@@ -108,10 +108,10 @@ declare module "engine-blackjack" {
     hits: number;
     initialBet: number;
     finalBet: number;
-    finalWin: number;
     wonOnRight: number;
     wonOnLeft: number;
     stage:
+      | "invalid"
       | "ready"
       | "player-turn-right"
       | "player-turn-left"

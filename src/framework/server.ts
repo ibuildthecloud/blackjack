@@ -1,4 +1,4 @@
-import { type Tool } from "./tools";
+import type { Tool } from "./tools";
 import { Middleware as McpMiddleware } from "./middleware";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type {

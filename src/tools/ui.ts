@@ -8,9 +8,6 @@ export function gameUI(gameId: string) {
       iframeUrl: `http://localhost:3000/game/${gameId}?u=${crypto.randomUUID()}`,
     },
     uiMetadata: {
-      // "initial-render-data": {
-      //   gameId,
-      // },
       "preferred-frame-size": ["100%", "100%"],
     },
     metadata: {
