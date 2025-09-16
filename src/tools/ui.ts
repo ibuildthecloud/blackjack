@@ -1,11 +1,14 @@
 import { createUIResource } from "@mcp-ui/server";
+import "dotenv/config"
+
+const PUBLIC_URL = process.env.PUBLIC_URL || "http://localhost:3000";
 
 export function gameUI(gameId: string) {
   return createUIResource({
     uri: `ui://game/${gameId}`,
     content: {
       type: "externalUrl",
-      iframeUrl: `http://localhost:3000/game/${gameId}?u=${crypto.randomUUID()}`,
+      iframeUrl: `${PUBLIC_URL}/game/${gameId}?u=${crypto.randomUUID()}`,
     },
     uiMetadata: {
       "preferred-frame-size": ["100%", "100%"],

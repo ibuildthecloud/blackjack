@@ -5,7 +5,8 @@
   "scripts": {
     "build": "react-router build",
     "dev": "cross-env NODE_ENV=development node server.js",
-    "start": "node server.js",
+    "start": "npm run migrate && node server.js",
+    "migrate": "node migrate.js",
     "typecheck": "react-router typegen && tsc -b",
     "format": "prettier --write .",
     "lint": "rm -rf dist && prettier --check . && eslint ."
