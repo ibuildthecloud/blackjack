@@ -54,6 +54,11 @@ class McpServerMiddleware {
       });
       transport.sessionId = sessionId;
       this.transports[sessionId] = transport;
+      transport.onclose = () => {
+        if (transport.sessionId) {
+          delete this.transports[transport.sessionId];
+        }
+      };
     } else {
       transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),

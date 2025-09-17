@@ -139,7 +139,6 @@ function ActionButtons({
   const handleStand = () => {
     postUIActionResult(
       uiActionResultToolCall("blackjack-stand", {
-        gameId,
         position,
       }),
     );
@@ -148,7 +147,6 @@ function ActionButtons({
   const handleDouble = () => {
     postUIActionResult(
       uiActionResultToolCall("blackjack-double", {
-        gameId,
         position,
       }),
     );
@@ -157,7 +155,6 @@ function ActionButtons({
   const handleSplit = () => {
     postUIActionResult(
       uiActionResultToolCall("blackjack-split", {
-        gameId,
       }),
     );
   };
@@ -165,7 +162,6 @@ function ActionButtons({
   const handleSurrender = () => {
     postUIActionResult(
       uiActionResultToolCall("blackjack-surrender", {
-        gameId,
       }),
     );
   };
@@ -174,7 +170,6 @@ function ActionButtons({
     // Default insurance bet is typically half the original bet
     postUIActionResult(
       uiActionResultToolCall("blackjack-insurance", {
-        gameId,
         bet: 5, // Default insurance bet
       }),
     );
@@ -293,7 +288,6 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 text-center">
           <h1 className="mb-2 text-3xl font-bold text-white">Blackjack</h1>
-          <div className="text-lg text-gray-200">Game ID: {gameId}</div>
           <div className="flex items-center justify-center gap-4">
             <div className="text-xl font-semibold text-yellow-300">
               {getStageDisplay(state.stage || "ready")}
@@ -452,8 +446,7 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
                 className="btn btn-lg btn-success"
                 onClick={() =>
                   postUIActionResult(
-                    uiActionResultToolCall("blackjack-deal", {
-                      gameId,
+                    uiActionResultToolCall("blackjack-new-game", {
                       bet: 10,
                     }),
                   )
@@ -471,8 +464,7 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
                 className="btn btn-lg btn-primary"
                 onClick={() =>
                   postUIActionResult(
-                    uiActionResultToolCall("blackjack-deal", {
-                      gameId,
+                    uiActionResultToolCall("blackjack-new-game", {
                       bet: 10,
                     }),
                   )
