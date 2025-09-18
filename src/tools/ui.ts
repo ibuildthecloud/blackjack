@@ -1,5 +1,5 @@
 import { createUIResource } from "@mcp-ui/server";
-import "dotenv/config"
+import "dotenv/config";
 
 const PUBLIC_URL = process.env.PUBLIC_URL || "http://localhost:3000";
 

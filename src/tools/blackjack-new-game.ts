@@ -68,7 +68,7 @@ export default DefineTool({
       if (existingGame.state?.stage !== "done") {
         throw new Error("Must finish current game");
       }
-      money = existingGame.money;
+      money = existingGame.getPublicState().money || 0;
     }
 
     const game = new Game(id, money);

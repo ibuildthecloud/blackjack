@@ -5,7 +5,7 @@ import pg from "pg";
 
 async function runMigrations() {
   console.log("🔄 Running database migrations...");
-  
+
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is required");
@@ -13,7 +13,7 @@ async function runMigrations() {
 
   // Create postgres client for migrations
   const client = new pg.Client({ connectionString });
-  
+
   try {
     await client.connect();
     await migrate(drizzle(client), {

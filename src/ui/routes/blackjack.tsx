@@ -36,8 +36,11 @@ interface CardProps {
 function CardComponent({ card, hidden = false }: CardProps) {
   if (hidden) {
     return (
-      <div className="card flex h-24 w-16 items-center justify-center rounded-lg border-2 border-gray-600 bg-gray-800 shadow-lg">
-        <div className="text-xs text-white">?</div>
+      <div className="relative flex h-24 w-16 items-center justify-center rounded-lg border border-gray-300 bg-gradient-to-br from-red-900 via-blue-900 to-red-900 shadow-xl md:h-48 md:w-32 md:rounded-xl md:shadow-2xl">
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-800 to-red-800 opacity-80 md:rounded-xl"></div>
+        <div className="relative text-sm font-bold text-white drop-shadow-lg md:text-2xl">
+          ?
+        </div>
       </div>
     );
   }
@@ -56,12 +59,45 @@ function CardComponent({ card, hidden = false }: CardProps) {
   const isRed = card.color === "R";
 
   return (
-    <div
-      className={`card flex h-24 w-16 flex-col items-center justify-between rounded-lg border-2 bg-white p-1 shadow-lg ${isRed ? "text-red-500" : "text-black"}`}
-    >
-      <div className="text-xs font-bold">{card.text}</div>
-      <div className="text-lg">{suitSymbols[card.suite]}</div>
-      <div className="rotate-180 transform text-xs font-bold">{card.text}</div>
+    <div className="relative flex h-24 w-16 transform flex-col items-center justify-between rounded-lg border border-gray-300 bg-gradient-to-br from-gray-50 to-white p-1 shadow-xl transition-transform duration-200 hover:scale-105 md:h-48 md:w-32 md:rounded-xl md:border-2 md:p-3 md:shadow-2xl">
+      {/* Card background texture */}
+      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-white via-gray-50 to-gray-100 opacity-50 md:rounded-xl"></div>
+
+      {/* Top left corner */}
+      <div
+        className={`relative z-10 flex flex-col items-center ${isRed ? "text-red-600" : "text-gray-900"}`}
+      >
+        <div className="text-xs leading-none font-bold md:text-lg">
+          {card.text}
+        </div>
+        <div className="text-xs leading-none md:text-sm">
+          {suitSymbols[card.suite]}
+        </div>
+      </div>
+
+      {/* Center suit symbol */}
+      <div
+        className={`relative z-10 ${isRed ? "text-red-600" : "text-gray-900"}`}
+      >
+        <div className="text-xl drop-shadow-sm md:text-5xl">
+          {suitSymbols[card.suite]}
+        </div>
+      </div>
+
+      {/* Bottom right corner (rotated) */}
+      <div
+        className={`relative z-10 flex rotate-180 transform flex-col items-center ${isRed ? "text-red-600" : "text-gray-900"}`}
+      >
+        <div className="text-xs leading-none font-bold md:text-lg">
+          {card.text}
+        </div>
+        <div className="text-xs leading-none md:text-sm">
+          {suitSymbols[card.suite]}
+        </div>
+      </div>
+
+      {/* Subtle inner border for depth */}
+      <div className="pointer-events-none absolute inset-0.5 rounded border border-gray-200 md:inset-1 md:rounded-lg"></div>
     </div>
   );
 }
@@ -83,27 +119,38 @@ interface HandComponentProps {
     | undefined;
   position: "left" | "right";
   isActive: boolean;
+  insurance?: number;
 }
 
-function HandComponent({ hand, position, isActive }: HandComponentProps) {
+function HandComponent({
+  hand,
+  position,
+  isActive,
+  insurance,
+}: HandComponentProps) {
   if (!hand || !hand.cards || hand.cards.length === 0) {
     return null;
   }
 
   return (
     <div
-      className={`flex flex-col items-center space-y-2 ${isActive ? "rounded-lg p-2 ring-2 ring-blue-500" : ""}`}
+      className={`flex flex-col items-center space-y-1 md:space-y-2 ${isActive ? "rounded-lg p-1 ring-1 ring-blue-500 md:p-2 md:ring-2" : ""}`}
     >
-      <div className="text-sm font-semibold text-gray-600">
-        {position.toUpperCase()} HAND
-      </div>
-      <div className="flex space-x-1">
+      {position === "left" && (
+        <div className="text-xs font-semibold text-gray-600 md:text-sm">
+          {position.toUpperCase()} HAND
+        </div>
+      )}
+      <div className="flex space-x-0.5 md:space-x-1">
         {hand.cards.map((card, index) => (
           <CardComponent key={index} card={card} />
         ))}
       </div>
-      <div className="text-sm">
+      <div className="text-xs md:text-sm">
         <div>Bet: ${hand.bet || 0}</div>
+        {position === "right" && insurance && (
+          <div>Insurance: ${insurance}</div>
+        )}
       </div>
     </div>
   );
@@ -153,25 +200,20 @@ function ActionButtons({
   };
 
   const handleSplit = () => {
-    postUIActionResult(
-      uiActionResultToolCall("blackjack-split", {
-      }),
-    );
+    postUIActionResult(uiActionResultToolCall("blackjack-split", {}));
   };
 
   const handleSurrender = () => {
-    postUIActionResult(
-      uiActionResultToolCall("blackjack-surrender", {
-      }),
-    );
+    postUIActionResult(uiActionResultToolCall("blackjack-surrender", {}));
   };
 
   const handleInsurance = () => {
-    // Default insurance bet is typically half the original bet
+    postUIActionResult(uiActionResultToolCall("blackjack-take-insurance", {}));
+  };
+
+  const declineInsurance = () => {
     postUIActionResult(
-      uiActionResultToolCall("blackjack-insurance", {
-        bet: 5, // Default insurance bet
-      }),
+      uiActionResultToolCall("blackjack-decline-insurance", {}),
     );
   };
 
@@ -228,7 +270,16 @@ function ActionButtons({
         className="btn btn-info"
         onClick={handleInsurance}
       >
-        Insurance
+        Take Insurance
+      </button>,
+    );
+    actions.push(
+      <button
+        key="insurance"
+        className="btn btn-info"
+        onClick={declineInsurance}
+      >
+        Decline Insurance
       </button>,
     );
   }
@@ -264,7 +315,7 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
       case "ready":
         return "Ready to Deal";
       case "player-turn-right":
-        return "Your Turn (Right Hand)";
+        return "Your Turn";
       case "player-turn-left":
         return "Your Turn (Left Hand)";
       case "dealer-turn":
@@ -282,18 +333,25 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
   const isLeftHandActive = state.stage === "player-turn-left";
   const showDealerHoleCard =
     state.stage === "showdown" || state.stage === "done";
+  const newBidAmount = state.gameResult?.finalBet || 10;
+  const hasLeftHand =
+    state.handInfo?.left &&
+    state.handInfo.left.cards &&
+    state.handInfo.left.cards.length > 0;
 
   return (
-    <div className="min-h-screen bg-green-800 p-4">
+    <div className="min-h-screen bg-green-800 p-2 md:p-4">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 text-center">
-          <h1 className="mb-2 text-3xl font-bold text-white">Blackjack</h1>
-          <div className="flex items-center justify-center gap-4">
-            <div className="text-xl font-semibold text-yellow-300">
+        <div className="mb-3 text-center md:mb-6">
+          <h1 className="mb-1 text-xl font-bold text-white md:mb-2 md:text-3xl">
+            Blackjack
+          </h1>
+          <div className="flex items-center justify-center gap-2 md:gap-4">
+            <div className="text-sm font-semibold text-yellow-300 md:text-xl">
               {getStageDisplay(state.stage || "ready")}
             </div>
             <button
-              className="btn btn-circle btn-ghost btn-sm"
+              className="btn hidden btn-circle btn-ghost btn-sm"
               onClick={() => revalidator.revalidate()}
               title="Refresh game state"
             >
@@ -316,34 +374,43 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
         </div>
 
         {/* Dealer Section */}
-        <div className="mb-8 rounded-lg bg-green-700 p-6 text-center">
-          <h2 className="mb-4 text-xl font-bold text-white">Dealer</h2>
-          <div className="mb-4 flex justify-center space-x-1">
+        <div className="mb-4 rounded-lg bg-green-700 p-3 text-center md:mb-8 md:p-6">
+          <h2 className="mb-2 text-lg font-bold text-white md:mb-4 md:text-xl">
+            Dealer
+          </h2>
+          <div className="mb-2 flex justify-center space-x-1 md:mb-4">
             {(state.dealerCards ?? []).map((card: Card, index: number) => (
               <CardComponent key={index} card={card} />
             ))}
             {!showDealerHoleCard && <CardComponent hidden={true} />}
           </div>
           {state.dealerHasBlackjack && (
-            <div className="font-bold text-yellow-300">DEALER BLACKJACK!</div>
+            <div className="text-sm font-bold text-yellow-300 md:text-base">
+              DEALER BLACKJACK!
+            </div>
           )}
           {state.dealerHasBusted && (
-            <div className="font-bold text-red-400">DEALER BUSTED!</div>
+            <div className="text-sm font-bold text-red-400 md:text-base">
+              DEALER BUSTED!
+            </div>
           )}
         </div>
 
         {/* Player Section */}
-        <div className="rounded-lg bg-green-600 p-6">
-          <h2 className="mb-4 text-center text-xl font-bold text-white">
-            Your Hands
-          </h2>
+        <div className="rounded-lg bg-green-600 p-3 md:p-6">
+          {hasLeftHand && (
+            <h2 className="mb-2 text-center text-lg font-bold text-white md:mb-4 md:text-xl">
+              Your Hands
+            </h2>
+          )}
 
-          <div className="mb-6 flex justify-center space-x-8">
+          <div className="mb-3 flex justify-center space-x-4 md:mb-6 md:space-x-8">
             {state.handInfo?.right && (
               <HandComponent
                 hand={state.handInfo.right}
                 position="right"
                 isActive={isRightHandActive}
+                insurance={state.insurance}
               />
             )}
             {state.handInfo?.left &&
@@ -359,10 +426,12 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
 
           {/* Action Buttons */}
           {isRightHandActive && state.handInfo?.right && (
-            <div className="mb-4">
-              <div className="mb-2 text-center text-white">
-                Right Hand Actions:
-              </div>
+            <div className="mb-2 md:mb-4">
+              {hasLeftHand && (
+                <div className="mb-1 text-center text-sm text-white md:mb-2 md:text-base">
+                  Right Hand Actions:
+                </div>
+              )}
               <ActionButtons
                 availableActions={state.handInfo.right.availableActions}
                 gameId={gameId}
@@ -372,8 +441,8 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
           )}
 
           {isLeftHandActive && state.handInfo?.left && (
-            <div className="mb-4">
-              <div className="mb-2 text-center text-white">
+            <div className="mb-2 md:mb-4">
+              <div className="mb-1 text-center text-sm text-white md:mb-2 md:text-base">
                 Left Hand Actions:
               </div>
               <ActionButtons
@@ -385,55 +454,66 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
           )}
 
           {/* Game Stats */}
-          <div className="grid grid-cols-2 gap-4 text-center text-white">
-            <div className="rounded bg-green-800 p-3">
-              <div className="text-sm text-gray-300">Available Money</div>
-              <div className="text-lg font-bold">${state.money ?? 0}</div>
-            </div>
-            <div className="rounded bg-green-800 p-3">
-              <div className="text-sm text-gray-300">Game Stage</div>
-              <div className="text-lg font-bold">
-                {getStageDisplay(state.stage || "ready")}
+          <div className="grid grid-cols-1 gap-2 text-center text-white md:gap-4">
+            <div className="rounded bg-green-800 p-2 md:p-3">
+              <div className="text-xs text-gray-300 md:text-sm">
+                Available Money
+              </div>
+              <div className="text-base font-bold md:text-lg">
+                ${state.money ?? 0}
               </div>
             </div>
           </div>
 
           {/* Game Result Section - only shown when game is done */}
           {state.stage === "done" && state.gameResult && (
-            <div className="mt-4 rounded-lg bg-blue-800 p-4">
-              <h3 className="mb-2 text-center text-lg font-bold text-white">
+            <div className="mt-2 rounded-lg bg-blue-800 p-2 md:mt-4 md:p-4">
+              <h3 className="mb-1 text-center text-base font-bold text-white md:mb-2 md:text-lg">
                 Game Result
               </h3>
-              <div className="grid grid-cols-3 gap-4 text-center text-white">
-                <div className="rounded bg-blue-900 p-3">
-                  <div className="text-sm text-gray-300">Final Bet</div>
-                  <div className="text-lg font-bold">
-                    ${state.gameResult.finalBet}
+              <div className="grid grid-cols-2 gap-2 text-center text-white md:gap-4">
+                <div className="rounded bg-blue-900 p-2 md:p-3">
+                  <div className="text-xs text-gray-300 md:text-sm">
+                    Outcome
+                  </div>
+                  <div className="text-sm font-bold md:text-lg">
+                    {state.playerHasBlackjack && (
+                      <span className="text-yellow-300">BLACKJACK!</span>
+                    )}
+                    {state.playerHasBusted && (
+                      <span className="text-red-300">BUSTED</span>
+                    )}
+                    {state.playerHasSurrendered && (
+                      <span className="text-orange-300">SURRENDERED</span>
+                    )}
+                    {!state.playerHasBlackjack &&
+                      !state.playerHasBusted &&
+                      !state.playerHasSurrendered && (
+                        <span
+                          className={
+                            state.gameResult.won > 0
+                              ? "text-green-300"
+                              : state.gameResult.won < 0
+                                ? "text-red-300"
+                                : "text-gray-300"
+                          }
+                        >
+                          {state.gameResult.won > 0
+                            ? "WON"
+                            : state.gameResult.won < 0
+                              ? "LOST"
+                              : "PUSH"}
+                        </span>
+                      )}
                   </div>
                 </div>
-                <div className="rounded bg-blue-900 p-3">
-                  <div className="text-sm text-gray-300">Won on Right</div>
+                <div className="rounded bg-blue-900 p-2 md:p-3">
+                  <div className="text-xs text-gray-300 md:text-sm">Amount</div>
                   <div
-                    className={`text-lg font-bold ${state.gameResult.wonOnRight > 0 ? "text-green-300" : state.gameResult.wonOnRight < 0 ? "text-red-300" : ""}`}
+                    className={`text-sm font-bold md:text-lg ${state.gameResult.won > 0 ? "text-green-300" : state.gameResult.won < 0 ? "text-red-300" : "text-gray-300"}`}
                   >
-                    ${state.gameResult.wonOnRight}
+                    ${state.gameResult.won}
                   </div>
-                </div>
-                <div className="rounded bg-blue-900 p-3">
-                  <div className="text-sm text-gray-300">Won on Left</div>
-                  <div
-                    className={`text-lg font-bold ${state.gameResult.wonOnLeft > 0 ? "text-green-300" : state.gameResult.wonOnLeft < 0 ? "text-red-300" : ""}`}
-                  >
-                    ${state.gameResult.wonOnLeft}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-2 text-center">
-                <div className="text-sm text-gray-300">Total Winnings</div>
-                <div
-                  className={`text-xl font-bold ${state.gameResult.wonOnRight + state.gameResult.wonOnLeft > 0 ? "text-green-300" : state.gameResult.wonOnRight + state.gameResult.wonOnLeft < 0 ? "text-red-300" : ""}`}
-                >
-                  ${state.gameResult.wonOnRight + state.gameResult.wonOnLeft}
                 </div>
               </div>
             </div>
@@ -441,36 +521,36 @@ export default function BlackjackGame({ loaderData }: Route.ComponentProps) {
 
           {/* Deal Button for new games */}
           {state.stage === "ready" && (
-            <div className="mt-6 text-center">
+            <div className="mt-3 text-center md:mt-6">
               <button
-                className="btn btn-lg btn-success"
+                className="btn btn-sm btn-success md:btn-lg"
                 onClick={() =>
                   postUIActionResult(
                     uiActionResultToolCall("blackjack-new-game", {
-                      bet: 10,
+                      bet: newBidAmount,
                     }),
                   )
                 }
               >
-                Deal Cards ($10 bet)
+                Deal Cards (${newBidAmount} bet)
               </button>
             </div>
           )}
 
           {/* New Game Button when game is finished */}
           {state.stage === "done" && (
-            <div className="mt-6 text-center">
+            <div className="mt-3 text-center md:mt-6">
               <button
-                className="btn btn-lg btn-primary"
+                className="btn btn-sm btn-primary md:btn-lg"
                 onClick={() =>
                   postUIActionResult(
                     uiActionResultToolCall("blackjack-new-game", {
-                      bet: 10,
+                      bet: newBidAmount,
                     }),
                   )
                 }
               >
-                New Game ($10 bet)
+                New Game (${newBidAmount} bet)
               </button>
             </div>
           )}

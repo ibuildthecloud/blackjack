@@ -24,9 +24,12 @@ export type PublicState = {
   dealerHasBlackjack?: State["dealerHasBlackjack"];
   gameResult?: {
     finalBet: State["finalBet"];
-    wonOnRight: State["wonOnRight"];
-    wonOnLeft: State["wonOnLeft"];
+    won: number;
   };
+  insurance?: number;
+  playerHasBlackjack?: boolean;
+  playerHasBusted?: boolean;
+  playerHasSurrendered?: boolean;
 };
 
 export class Game {
@@ -41,7 +44,7 @@ export class Game {
   }
 
   async deal(bet: number, sideBets?: SideBetsInfo, rules?: Rule) {
-    const game = new CardGame(undefined, presets.getRules(rules));
+    const game = new CardGame(undefined, presets.getRules(rules || {}));
     await this.dispatch(
       actions.deal({
         bet,
@@ -63,12 +66,17 @@ export class Game {
   }
 
   getPublicState(): PublicState {
+    const bet = this.state?.finalBet || this.getCurrentBet();
+    const won =
+      (this.state?.wonOnRight || 0) +
+      (this.state?.wonOnLeft || 0) +
+      (this.state?.dealerHasBlackjack
+        ? this.state?.sideBetsInfo?.insurance?.win || 0
+        : 0);
     return {
-      money:
-        this.money -
-        (this.state?.handInfo?.left?.bet || 0) -
-        (this.state?.handInfo?.right?.bet || 0),
+      money: this.money - bet + won,
       stage: this.state?.stage,
+      insurance: this.state?.sideBetsInfo?.insurance?.risk,
       handInfo: {
         left: this.state?.handInfo.left && {
           cards: this.state.handInfo.left.cards,
@@ -87,15 +95,23 @@ export class Game {
         dealerHasBusted: this.state?.dealerHasBusted,
       }),
       ...(this.state?.dealerHasBlackjack && {
-        dealerHasBusted: this.state?.dealerHasBlackjack,
+        dealerHasBlackjack: this.state?.dealerHasBlackjack,
       }),
       ...(this.state?.stage === "done" && {
         gameResult: {
-          finalBet: this.state?.finalBet,
-          wonOnRight: this.state?.wonOnRight,
-          wonOnLeft: this.state?.wonOnLeft,
+          finalBet: bet,
+          won: won - bet,
         },
       }),
+      playerHasBlackjack:
+        this.state?.handInfo?.right?.playerHasBlackjack ||
+        this.state?.handInfo?.left?.playerHasBlackjack,
+      playerHasBusted:
+        this.state?.handInfo?.right?.playerHasBusted &&
+        this.state?.handInfo?.left?.playerHasBusted,
+      playerHasSurrendered:
+        this.state?.handInfo?.right?.playerHasSurrendered &&
+        this.state?.handInfo?.left?.playerHasSurrendered,
     };
   }
 
@@ -135,15 +151,20 @@ export class Game {
     );
   }
 
+  private getCurrentBet() {
+    return (
+      (this.state?.handInfo.left?.bet || 0) +
+      (this.state?.handInfo.right?.bet || 0)
+    );
+  }
+
   private validateState(newState: State) {
     if (newState.stage === "invalid") {
       throw new Error(
         `Invalid action: type=${newState.history.pop()?.type} payload=${newState.history.pop()?.payload}`,
       );
     }
-    const bet =
-      (newState.handInfo.left?.bet || 0) + (newState.handInfo.right?.bet || 0);
-    if (bet > this.money) {
+    if (this.getCurrentBet() > this.money) {
       throw new Error("Not enough money");
     }
   }
@@ -152,11 +173,15 @@ export class Game {
     if (!game) {
       game = new CardGame(this.state);
     }
+    if (game.getState()?.stage === "done") {
+      throw new Error("Game is already done, start new game");
+    }
+    if (game.getState()?.stage === "invalid") {
+      throw new Error("Game is in invalid state, start new game");
+    }
+    this.validateState(game.getState());
     const newState = game.dispatch(action);
     this.validateState(newState);
-    if (newState.stage === "done") {
-      this.money += newState.wonOnRight + newState.wonOnLeft;
-    }
     this.state = newState;
     return this.save();
   }

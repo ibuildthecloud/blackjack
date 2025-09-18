@@ -5,7 +5,8 @@ import BlackjackStand from "./blackjack-stand";
 import BlackjackDouble from "./blackjack-double";
 import BlackjackSplit from "./blackjack-split";
 import BlackjackSurrender from "./blackjack-surrender";
-import BlackjackInsurance from "./blackjack-insurance";
+import BlackjackDeclineInsurance from "./blackjack-decline-insurance";
+import BlackjackTakeInsurance from "./blackjack-take-insurance";
 
 export default [
   BlackjackNewGame,
@@ -15,5 +16,6 @@ export default [
   BlackjackDouble,
   BlackjackSplit,
   BlackjackSurrender,
-  BlackjackInsurance,
+  BlackjackTakeInsurance,
+  BlackjackDeclineInsurance,
 ];
