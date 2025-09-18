@@ -48,7 +48,6 @@ export default DefineTool({
           .boolean()
           .default(true)
           .describe("Allow doubling after split"),
-        surrender: z.boolean().default(true).describe("Allow surrender"),
         insurance: z.boolean().default(true).describe("Allow insurance"),
         showdownAfterAceSplit: z
           .boolean()

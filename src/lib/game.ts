@@ -44,7 +44,10 @@ export class Game {
   }
 
   async deal(bet: number, sideBets?: SideBetsInfo, rules?: Rule) {
-    const game = new CardGame(undefined, presets.getRules(rules || {}));
+    const game = new CardGame(undefined, {
+      ...(presets.getRules(rules || {})),
+      surrender: false,
+    });
     await this.dispatch(
       actions.deal({
         bet,
@@ -59,10 +62,6 @@ export class Game {
 
   async split() {
     await this.dispatch(actions.split());
-  }
-
-  async surrender() {
-    await this.dispatch(actions.surrender());
   }
 
   getPublicState(): PublicState {
@@ -151,11 +150,12 @@ export class Game {
     );
   }
 
+  private static calculateBet(state?: State) {
+    return (state?.handInfo.left?.bet || 0) + (state?.handInfo.right?.bet || 0);
+  }
+
   private getCurrentBet() {
-    return (
-      (this.state?.handInfo.left?.bet || 0) +
-      (this.state?.handInfo.right?.bet || 0)
-    );
+    return Game.calculateBet(this.state);
   }
 
   private validateState(newState: State) {
@@ -165,6 +165,9 @@ export class Game {
       );
     }
     if (this.getCurrentBet() > this.money) {
+      throw new Error("Not enough money");
+    }
+    if (Game.calculateBet(newState) > this.money) {
       throw new Error("Not enough money");
     }
   }
